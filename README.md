@@ -9,7 +9,9 @@ To send a message from the multichan tab:
 To ignore a user, channel, or just a user's messages in a specific channel:
 
 > /mc_ignore nick
+
 > /mc_ignore chan
+
 > /mc_ignore chan/nick
 
 To unignore:
