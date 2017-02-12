@@ -4,6 +4,6 @@ Multichan is a plugin for hexchat that will allow you to see all channel message
 
 To send a message from the multichan tab:
 
-> #channel message
+> \#channel message
 
 More configurations to come
