@@ -147,7 +147,11 @@ def set_ignore(word, word_eol, userdata):
         context.emit_print('Channel Message', 'multichan', "You are now ignoring %s" % (prefs))
         return hexchat.EAT_HEXCHAT
     except IndexError:
+        ignore_prefs = hexchat.get_pluginpref(IGNORE_PREFS)
+        if not ignore_prefs or ignore_prefs == '':
+            ignore_prefs = 'nobody. Such a kind faggot you are.'
         context.emit_print('Channel Message', 'multichan', 'No arguments given')
+        context.emit_print('Channel Message', 'multichan', 'You are ignoring %s' % (ignore_prefs) )
         return hexchat.EAT_HEXCHAT
 
 def unset_ignore(word, word_eol, userdata):
