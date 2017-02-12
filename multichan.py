@@ -182,6 +182,7 @@ def unset_ignore(word, word_eol, userdata):
 
 # HOOK INITS
 hexchat.hook_server("PRIVMSG", read_msg) # this tied right into the function I already had
+hexchat.hook_server("NOTICE", read_msg) # this tied right into the function I already had
 hexchat.hook_print("Your Message", send_msg)
 hexchat.hook_command("mc_ignore", set_ignore, help="/mc_ignore <channel|nick|channel/nick>")
 hexchat.hook_command("mc_unignore", unset_ignore, help="/mc_unignore <channel|nick|channel/nick")
