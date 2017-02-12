@@ -16,6 +16,8 @@ To ignore a user, channel, or just a user's messages in a specific channel:
 
 To unignore:
 
-> /mc_unignore
+> /mc_unignore 
+
+> /mc_unignore all # clears the list 
 
 More configurations to come

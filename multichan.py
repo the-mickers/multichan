@@ -162,6 +162,10 @@ def unset_ignore(word, word_eol, userdata):
             context.emit_print('Channel Message', 'multichan', "You aren't ignoring anyone stupid")
             return hexchat.EAT_HEXCHAT
         else:
+            if str(word_eol[1]) == 'all':
+                hexchat.del_pluginpref(IGNORE_PREFS)
+                context.emit_print('Channel Message', 'multichan', 'Ignore list cleared. Nice to see you had a change of heart')
+                return hexchat.EAT_HEXCHAT
             prefs = str(ignore_prefs).split(' ')
             new_prefs = []
             deletions = str(word_eol[1]).split(' ')
