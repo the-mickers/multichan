@@ -13,6 +13,9 @@ import hexchat
 MULTICHAN_TAB = '$multichan'
 LOCAL_NICK = hexchat.get_info('nick')
 CHAN_COLORS = {}
+IGNORE_PREFS = "mc_ignore"
+
+# HELPER FUNCTIONS
 
 # i could probably use globals to avoid running this on every hook
 # but no one is calling me out yet and im not experiencing severe
@@ -51,11 +54,27 @@ def assign_colors():
                     else:
                         index += 1
 
+def in_ignores(chan, nick):
+    ignore_prefs = hexchat.get_pluginpref(IGNORE_PREFS)
+    if not ignore_prefs:
+        return False
+    ignored_list = ignore_prefs.split(' ')
+    ignored_matches = [chan, nick, '%s/%s' % (chan, nick)]
+    for ignored in ignored_list:
+        for matched in ignored_matches:
+            if ignored == matched:
+                return True
+    return False
+
+# FUNCTIONS FOR CREATING STRINGS TO SEND TO CLIENT
+
 def form_response(context, word, word_eol):
     try:
         response = {}
         nick = word[0].split('!')[0].split(':')[1]
         chan = word[2]
+        if in_ignores(chan, nick):
+            return None
         msg = word_eol[3][1:]
         if 'ACTION' in msg:
             left_indent = '{}{}/{}'.format(CHAN_COLORS[chan], chan, '*')
@@ -86,6 +105,8 @@ def form_usermsg(channel, message):
     except (IndexError, KeyError):
         return None 
 
+# HOOK FUNCTIONS
+
 def read_msg(word, word_eol, userdata):
     assign_colors()
     context = find_multichan_context()
@@ -114,5 +135,53 @@ def send_msg(word, word_eol, userdata):
     except ValueError:
         return hexchat.EAT_NONE
 
+def set_ignore(word, word_eol, userdata):
+    context = hexchat.get_context()
+    try:
+        ignore_prefs = hexchat.get_pluginpref(IGNORE_PREFS)
+        if not ignore_prefs:
+            prefs = str(word_eol[1])
+        else:
+            prefs = str(ignore_prefs) + ' ' + str(word_eol[1])
+        hexchat.set_pluginpref(IGNORE_PREFS, prefs)
+        context.emit_print('Channel Message', 'multichan', "You are now ignoring %s" % (prefs))
+        return hexchat.EAT_HEXCHAT
+    except IndexError:
+        context.emit_print('Channel Message', 'multichan', 'No arguments given')
+        return hexchat.EAT_HEXCHAT
+
+def unset_ignore(word, word_eol, userdata):
+    context = hexchat.get_context()
+    try:
+        ignore_prefs = hexchat.get_pluginpref(IGNORE_PREFS)
+        if not ignore_prefs:
+            context.emit_print('Channel Message', 'multichan', "You aren't ignoring anyone stupid")
+            return hexchat.EAT_HEXCHAT
+        else:
+            prefs = str(ignore_prefs).split(' ')
+            new_prefs = []
+            deletions = str(word_eol[1]).split(' ')
+            for pref in prefs:
+                for deletion in deletions:
+                    if str(deletion) == str(pref):
+                        pass
+                    else:
+                        if str(pref) not in new_prefs:
+                            new_prefs.append(str(pref))
+            new_ignore_prefs = ' '.join(new_prefs)
+            hexchat.set_pluginpref(IGNORE_PREFS, new_ignore_prefs)
+            context.emit_print('Channel Message', 'multichan', 'Unignoring %s' % (word_eol[1]))
+            if new_ignore_prefs == '':
+                new_ignore_prefs = 'nobody. Such a kind faggot you are.'
+            context.emit_print('Channel Message', 'multichan', 'You are now ignoring %s' % (new_ignore_prefs))
+            return hexchat.EAT_HEXCHAT
+    except IndexError:
+        context.emit_print('Channel Message', 'multichan', 'No arguments given')
+        return hexchat.EAT_HEXCHAT
+
+
+# HOOK INITS
 hexchat.hook_server("PRIVMSG", read_msg) # this tied right into the function I already had
 hexchat.hook_print("Your Message", send_msg)
+hexchat.hook_command("mc_ignore", set_ignore, help="/mc_ignore <channel|nick|channel/nick>")
+hexchat.hook_command("mc_unignore", unset_ignore, help="/mc_unignore <channel|nick|channel/nick")
