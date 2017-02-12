@@ -6,28 +6,30 @@ __module_description__ = "Monitor and interact with multiple channels"
 
 __module_author__ = 'mickers'
 __module_inspiration__ = 'sebastian'
+__module_gordan_ramsey__ = 'zippy'
 
 import hexchat
 
-multichan_tab = '$multichan'
-local_nick = hexchat.get_info('nick')
-chan_colors = {}
+MULTICHAN_TAB = '$multichan'
+LOCAL_NICK = hexchat.get_info('nick')
+CHAN_COLORS = {}
 
 # i could probably use globals to avoid running this on every hook
 # but no one is calling me out yet and im not experiencing severe
 # performance kicks
 def find_multichan_context():
-    context = hexchat.find_context(channel=multichan_tab)
+    context = hexchat.find_context(channel=MULTICHAN_TAB)
     if not context:
-        hexchat.command('QUERY -nofocus %s' % (multichan_tab))
-        context = hexchat.find_context(channel=multichan_tab)
+        hexchat.command('QUERY -nofocus %s' % (MULTICHAN_TAB))
+        context = hexchat.find_context(channel=MULTICHAN_TAB)
     return context
 
 # just like above, this probably shouldnt get called on every hook.
 # i'm not entirely sure another way to handle a new channel getting
 # joined though
+# actually i can create a hook for channel joins, duh
 def assign_colors():
-    chan_colors[local_nick] = '\00301' # for our messages
+    CHAN_COLORS[LOCAL_NICK] = '\00301' # for our messages
     channels = hexchat.get_list('channels')
     index = 3
     for chan in channels:
@@ -35,7 +37,7 @@ def assign_colors():
             chan.channel[0].startswith('#')
         except (IndexError): # happens after a kick
             continue
-        if chan.channel not in chan_colors.keys():
+        if chan.channel not in CHAN_COLORS.keys():
             if chan.channel[0].startswith('#'):
                 while True:
                     if len(str(index)) == 1:
@@ -43,8 +45,8 @@ def assign_colors():
                     else:
                         color = str(index)
                     color_string = '\003' + color
-                    if color_string not in chan_colors.values():
-                        chan_colors[chan.channel] = color_string
+                    if color_string not in CHAN_COLORS.values():
+                        CHAN_COLORS[chan.channel] = color_string
                         break
                     else:
                         index += 1
@@ -55,9 +57,9 @@ def form_response(context, word, word_eol):
         nick = word[0].split('!')[0].split(':')[1]
         chan = word[2]
         msg = word_eol[3][1:]
-        left_indent = '{}{}/{}'.format(chan_colors[chan], chan, nick)
+        left_indent = '{}{}/{}'.format(CHAN_COLORS[chan], chan, nick)
         right_indent = msg
-        if local_nick in msg:
+        if LOCAL_NICK in msg:
             context.command('GUI COLOR 3')
             response['left'] = '\002\035{}'.format(left_indent)
             response['right'] = '\002\035{}'.format(right_indent)
@@ -72,15 +74,15 @@ def form_response(context, word, word_eol):
 def form_usermsg(channel, message):
     try:
         response = {}
-        left_indent = '{}{}/{}'.format(chan_colors[local_nick], channel, local_nick)
-        right_indent = '{}{}'.format(chan_colors[local_nick], message)
+        left_indent = '{}{}/{}'.format(CHAN_COLORS[LOCAL_NICK], channel, LOCAL_NICK)
+        right_indent = '{}{}'.format(CHAN_COLORS[LOCAL_NICK], message)
         response['left'] = '{}'.format(left_indent)
         response['right'] = '{}'.format(right_indent)
         return response
     except (IndexError, KeyError):
         return None 
 
-def read_raw_line(word, word_eol, userdata, attributes):
+def read_msg(word, word_eol, userdata):
     assign_colors()
     context = find_multichan_context()
     if word[1] != 'PONG': # pong doesnt give me more whiskey
@@ -89,7 +91,7 @@ def read_raw_line(word, word_eol, userdata, attributes):
             context.emit_print('Channel Message', response['left'], response['right'])
     return hexchat.EAT_NONE
 
-def on_msg(word, word_eol, userdata):
+def send_msg(word, word_eol, userdata):
     try:
         channel, message = word[1].split(" ", 1)
         if channel.startswith('#'):
@@ -108,5 +110,5 @@ def on_msg(word, word_eol, userdata):
     except ValueError:
         return hexchat.EAT_NONE
 
-hexchat.hook_server_attrs("RAW LINE", read_raw_line)
-hexchat.hook_print("Your Message", on_msg)
+hexchat.hook_server("PRIVMSG", read_msg) # this tied right into the function I already had
+hexchat.hook_print("Your Message", send_msg)
