@@ -57,8 +57,12 @@ def form_response(context, word, word_eol):
         nick = word[0].split('!')[0].split(':')[1]
         chan = word[2]
         msg = word_eol[3][1:]
-        left_indent = '{}{}/{}'.format(CHAN_COLORS[chan], chan, nick)
-        right_indent = msg
+        if 'ACTION' in msg:
+            left_indent = '{}{}/{}'.format(CHAN_COLORS[chan], chan, '*')
+            right_indent = '{} {}'.format(nick, msg[1:-1].replace("ACTION ", ""))
+        else:
+            left_indent = '{}{}/{}'.format(CHAN_COLORS[chan], chan, nick)
+            right_indent = msg
         if LOCAL_NICK in msg:
             context.command('GUI COLOR 3')
             response['left'] = '\002\035{}'.format(left_indent)
@@ -85,13 +89,21 @@ def form_usermsg(channel, message):
 def read_msg(word, word_eol, userdata):
     assign_colors()
     context = find_multichan_context()
-    if word[1] != 'PONG': # pong doesnt give me more whiskey
-        response = form_response(context, word, word_eol)
-        if response:
-            context.emit_print('Channel Message', response['left'], response['right'])
+    response = form_response(context, word, word_eol)
+    if response:
+        context.emit_print('Channel Message', response['left'], response['right'])
+    return hexchat.EAT_NONE
+
+def read_action(word, word_eol, userdata):
+    assign_colors()
+    context = find_multichan_context()
+    response = form_action_response()
+    if response:
+        context.emit_print('Channel Message', response['left'], response['right'])
     return hexchat.EAT_NONE
 
 def send_msg(word, word_eol, userdata):
+    assign_colors()
     try:
         channel, message = word[1].split(" ", 1)
         if channel.startswith('#'):
