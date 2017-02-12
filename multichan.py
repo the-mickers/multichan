@@ -94,14 +94,6 @@ def read_msg(word, word_eol, userdata):
         context.emit_print('Channel Message', response['left'], response['right'])
     return hexchat.EAT_NONE
 
-def read_action(word, word_eol, userdata):
-    assign_colors()
-    context = find_multichan_context()
-    response = form_action_response()
-    if response:
-        context.emit_print('Channel Message', response['left'], response['right'])
-    return hexchat.EAT_NONE
-
 def send_msg(word, word_eol, userdata):
     assign_colors()
     try:
