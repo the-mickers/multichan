@@ -15,6 +15,7 @@ LOCAL_NICK = hexchat.get_info('nick')
 CHAN_COLORS = {}
 IGNORE_PREFS = "mc_ignore"
 
+
 # HELPER FUNCTIONS
 
 # i could probably use globals to avoid running this on every hook
@@ -140,9 +141,9 @@ def set_ignore(word, word_eol, userdata):
     try:
         ignore_prefs = hexchat.get_pluginpref(IGNORE_PREFS)
         if not ignore_prefs:
-            prefs = str(word_eol[1])
+            prefs = str(word_eol[1]).strip()
         else:
-            prefs = str(ignore_prefs) + ' ' + str(word_eol[1])
+            prefs = str(ignore_prefs) + ' ' + str(word_eol[1]).strip()
         hexchat.set_pluginpref(IGNORE_PREFS, prefs)
         context.emit_print('Channel Message', 'multichan', "You are now ignoring %s" % (prefs))
         return hexchat.EAT_HEXCHAT
@@ -161,21 +162,19 @@ def unset_ignore(word, word_eol, userdata):
         if not ignore_prefs:
             context.emit_print('Channel Message', 'multichan', "You aren't ignoring anyone stupid")
             return hexchat.EAT_HEXCHAT
+        elif str(word_eol[1]) == 'all':
+            hexchat.del_pluginpref(IGNORE_PREFS)
+            context.emit_print('Channel Message', 'multichan', 'Ignore list cleared. Nice to see you had a change of heart.')
+            return hexchat.EAT_HEXCHAT
         else:
-            if str(word_eol[1]) == 'all':
-                hexchat.del_pluginpref(IGNORE_PREFS)
-                context.emit_print('Channel Message', 'multichan', 'Ignore list cleared. Nice to see you had a change of heart')
-                return hexchat.EAT_HEXCHAT
             prefs = str(ignore_prefs).split(' ')
             new_prefs = []
-            deletions = str(word_eol[1]).split(' ')
+            deletion = str(word_eol[1]).strip()
             for pref in prefs:
-                for deletion in deletions:
-                    if str(deletion) == str(pref):
-                        pass
-                    else:
-                        if str(pref) not in new_prefs:
-                            new_prefs.append(str(pref))
+                if str(deletion) == str(pref):
+                    pass
+                else:
+                    new_prefs.append(str(pref))
             new_ignore_prefs = ' '.join(new_prefs)
             hexchat.set_pluginpref(IGNORE_PREFS, new_ignore_prefs)
             context.emit_print('Channel Message', 'multichan', 'Unignoring %s' % (word_eol[1]))
